@@ -4,10 +4,11 @@ LABEL maintainer="Yanglin <i@yangl.in>"
 LABEL from="https://github.com/nginxinc/docker-nginx/tree/master/mainline/alpine"
 LABEL reference="https://docs.docker.com/develop/develop-images/dockerfile_best-practices"
 
-# Mainline
-ENV NGINX_VERSION 1.15.5
-# Stable
-#ENV NGINX_VERSION 1.14.0
+
+# Mainline, Stable - 1.14.0
+ENV VERSION  1.15.5
+ENV TIMEZONE Asia/Shanghai
+
 
 RUN NGINX_MENU="/etc/nginx" \
     && NGINX_SBIN="/usr/sbin/nginx" \
@@ -32,11 +33,11 @@ RUN NGINX_MENU="/etc/nginx" \
         curl \
         grep \
         sed \
-    && curl -fSL https://nginx.org/download/nginx-$NGINX_VERSION.tar.gz -o nginx.tar.gz \
+    && curl -fSL https://nginx.org/download/nginx-$VERSION.tar.gz -o nginx.tar.gz \
     && mkdir -p /usr/src \
     && tar -zxC /usr/src -f nginx.tar.gz \
     && rm nginx.tar.gz \
-    && cd /usr/src/nginx-$NGINX_VERSION \
+    && cd /usr/src/nginx-$VERSION \
     \
     # Remove "Server: nginx"
     && grep -rl '.server == NULL' ./src/http | xargs sed -i 's/r->headers_out\.server == NULL/0/g' \
@@ -47,7 +48,7 @@ RUN NGINX_MENU="/etc/nginx" \
     && make -j$(getconf _NPROCESSORS_ONLN) \
     && make install \
     && strip $NGINX_SBIN* \
-    && rm -rf /usr/src/nginx-$NGINX_VERSION \
+    && rm -rf /usr/src/nginx-$VERSION \
     \
     # Bring in gettext so we can get `envsubst`, then throw the rest away.
     # To do this, we need to install `gettext` then move `envsubst` out of the way so `gettext` can be deleted completely, then move `envsubst` back.
@@ -65,9 +66,12 @@ RUN NGINX_MENU="/etc/nginx" \
     && apk del .gettext \
     && mv /tmp/envsubst /usr/local/bin/ \
     \
-    # Bring in tzdata so users could set the timezones through the environment variables
+    # Bring in tzdata, CST timezone — Asia/Shanghai
     && apk add --no-cache tzdata \
-    && nginx -V
+    && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
+    && apk del tzdata \
+    && nginx -V \
+    && date "+%n%Y-%m-%d %H:%M:%S %Z%n"
 
 EXPOSE 80 443
 
