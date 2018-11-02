@@ -21,6 +21,10 @@ $ docker run -p 80:80 -d dotcloudid/nginx
 # So that, you can add_module or edit nginx.conf file
 ```
 $ docker exec -it some-nginx /bin/sh
+```
+# Crond command must be executed inside, If you want to cut nginx logs
+```
+$ crond
 
 # Reference
 - [Docker Practice](https://docs.docker.com/develop/develop-images/dockerfile_best-practices)

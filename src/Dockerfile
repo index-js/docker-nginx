@@ -6,14 +6,13 @@ LABEL reference="https://docs.docker.com/develop/develop-images/dockerfile_best-
 
 
 # Mainline, Stable - 1.14.0
-ENV VERSION  1.15.5
-ENV TIMEZONE Asia/Shanghai
+ENV VERSION   1.15.5
+ENV TIMEZONE  Asia/Shanghai
+ENV PREFIX    /etc/nginx
 
-
-RUN NGINX_MENU="/etc/nginx" \
-    && NGINX_SBIN="/usr/sbin/nginx" \
+RUN NGINX_SBIN="/usr/sbin/nginx" \
     && CONFIG="\
-        --prefix=$NGINX_MENU \
+        --prefix=$PREFIX \
         --sbin-path=$NGINX_SBIN \
         --user=nginx \
         --group=nginx \
@@ -21,7 +20,7 @@ RUN NGINX_MENU="/etc/nginx" \
         --with-http_v2_module \
     " \
     && addgroup -S nginx \
-    && adduser -D -S -s /sbin/nologin -G nginx nginx \
+    && adduser -D -s /sbin/nologin -G nginx nginx \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libc-dev \
@@ -40,8 +39,8 @@ RUN NGINX_MENU="/etc/nginx" \
     && cd /usr/src/nginx-$VERSION \
     \
     # Remove "Server: nginx"
-    && grep -rl '.server == NULL' ./src/http | xargs sed -i 's/r->headers_out\.server == NULL/0/g' \
-    && grep -rl '<hr><center>' ./src/http | xargs sed -i 's/<hr><center>.*$/<hr><center>Server Error Page<\/center>\" CRLF/g' \
+    && grep -rl ".server == NULL" ./src/http | xargs sed -i "s/r->headers_out\.server == NULL/0/g" \
+    && grep -rl "<hr><center>" ./src/http | xargs sed -i "s/<hr><center>.*$/<hr><center>Server Error Page<\/center>\" CRLF/g" \
     \
     # Compile
     && ./configure $CONFIG \
@@ -54,9 +53,8 @@ RUN NGINX_MENU="/etc/nginx" \
     # To do this, we need to install `gettext` then move `envsubst` out of the way so `gettext` can be deleted completely, then move `envsubst` back.
     && apk add --no-cache --virtual .gettext gettext \
     && mv /usr/bin/envsubst /tmp/ \
-    \
     && runDeps="$( \
-        scanelf --needed --nobanner --format '%n#p' $NGINX_SBIN $NGINX_MENU/modules/*.so /tmp/envsubst \
+        scanelf --needed --nobanner --format '%n#p' $NGINX_SBIN $PREFIX/modules/*.so /tmp/envsubst \
             | tr ',' '\n' \
             | sort -u \
             | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
@@ -66,12 +64,22 @@ RUN NGINX_MENU="/etc/nginx" \
     && apk del .gettext \
     && mv /tmp/envsubst /usr/local/bin/ \
     \
-    # Bring in tzdata, CST timezone — Asia/Shanghai
+    # Bring in tzdata, e.g. Asia/Shanghai
     && apk add --no-cache tzdata \
     && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
     && apk del tzdata \
     && nginx -V \
-    && date "+%n%Y-%m-%d %H:%M:%S %Z%n"
+    && date "+%n%Y-%m-%d %H:%M:%S %Z%n" \
+    \
+    # Nginx Crontab
+    && echo "# Cut Nginx Logs" >> /etc/crontabs/root \
+    && echo "0       0       *       *       *       /bin/sh   /etc/nginx/cut-nginx-logs.sh" >> /etc/crontabs/root \
+    && echo >> /etc/crontabs/root \
+    && crontab -l \
+    && crond
+
+
+COPY cut-nginx-logs.sh $PREFIX/cut-nginx-logs.sh
 
 EXPOSE 80 443
 
