@@ -8,23 +8,24 @@ You can edit both nginx version and timezone.
 2. No GPG verification
 3. Remove "Server: nginx" and server_tokens
 4. Add timezone
+5. Add crontab
 
 # Run
 ```
 # Expose 80 443
-```
 $ docker run -p 80:80 -d dotcloudid/nginx
+```
 
 # Re-edit
 ```
 # Link to container layer
 # So that, you can add_module or edit nginx.conf file
-```
 $ docker exec -it some-nginx /bin/sh
 ```
-# Crond command must be executed inside, If you want to cut nginx logs
 ```
+# Crond command must be executed inside, If you want to cut nginx logs
 $ crond
+```
 
 # Reference
 - [Docker Practice](https://docs.docker.com/develop/develop-images/dockerfile_best-practices)
