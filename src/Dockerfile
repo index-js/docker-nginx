@@ -1,11 +1,11 @@
-FROM alpine
+FROM alpine:3.8
 
 LABEL maintainer="Yanglin <i@yangl.in>"
 LABEL from="https://github.com/nginxinc/docker-nginx/tree/master/mainline/alpine"
 LABEL reference="https://docs.docker.com/develop/develop-images/dockerfile_best-practices"
 
 
-# Mainline, Stable - 1.14.0
+# Mainline-1.15.5, Stable-1.14.0
 ENV VERSION   1.15.5
 ENV TIMEZONE  Asia/Shanghai
 ENV PREFIX    /etc/nginx
@@ -75,8 +75,7 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && echo "# Cut Nginx Logs" >> /etc/crontabs/root \
     && echo "0       0       *       *       *       /bin/sh   /etc/nginx/cut-nginx-logs.sh" >> /etc/crontabs/root \
     && echo >> /etc/crontabs/root \
-    && crontab -l \
-    && crond
+    && crontab -l
 
 
 COPY cut-nginx-logs.sh $PREFIX/cut-nginx-logs.sh
@@ -85,4 +84,4 @@ EXPOSE 80 443
 
 STOPSIGNAL SIGTERM
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/bin/sh", "-c", "nginx && crond -f"]

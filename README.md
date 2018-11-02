@@ -11,20 +11,15 @@ You can edit both nginx version and timezone.
 5. Add crontab
 
 # Run
+Expose 80 443
 ```
-# Expose 80 443
 $ docker run -p 80:80 -d dotcloudid/nginx
 ```
 
 # Re-edit
+Link to container layer, and you can add_module or edit nginx.conf file
 ```
-# Link to container layer
-# So that, you can add_module or edit nginx.conf file
 $ docker exec -it some-nginx /bin/sh
-```
-```
-# Crond command must be executed inside, If you want to cut nginx logs
-$ crond
 ```
 
 # Reference
