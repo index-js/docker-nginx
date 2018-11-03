@@ -7,20 +7,20 @@ NGINX=/usr/sbin/nginx
 LOGS_PATH=/etc/nginx/logs
 
 # 创建目录
-NEW_PATH=$LOGS_PATH/$(date +"%Y")/$(date +"%m")
+NEW_PATH=$LOGS_PATH/$(date -d @$(($(date +%s) - 86400)) +%Y)/$(date -d @$(($(date +%s) - 86400)) +%m)
 mkdir -p $NEW_PATH
 
 # 移动日志 -- Access/Error
 # 判断成功日志是否存在
 ACCESS=$LOGS_PATH/access.log
 if [ -f $ACCESS ]; then
-  mv $ACCESS $NEW_PATH/$(date +"%Y%m%d")_Access.log
+  mv $ACCESS $NEW_PATH/$(date -d @$(($(date +%s) - 86400)) +%Y%m%d)_Access.log
 fi
 
 # 判断失败日志是否存在
 ERROR=$LOGS_PATH/error.log
 if [ -f $ERROR ]; then
-  mv $ERROR $NEW_PATH/$(date +"%Y%m%d")_Error.log
+  mv $ERROR $NEW_PATH/$(date -d @$(($(date +%s) - 86400)) +%Y%m%d)_Error.log
 fi
 
 # 重启 - reboot
