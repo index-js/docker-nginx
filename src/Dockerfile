@@ -5,8 +5,8 @@ LABEL from="https://github.com/nginxinc/docker-nginx/tree/master/mainline/alpine
 LABEL reference="https://docs.docker.com/develop/develop-images/dockerfile_best-practices"
 
 
-# Mainline-1.15.5, Stable-1.14.0
-ENV VERSION   1.15.5
+# Mainline-1.15.6, Stable-1.14.1
+ENV VERSION   1.15.6
 ENV TIMEZONE  Asia/Shanghai
 ENV PREFIX    /etc/nginx
 
@@ -14,13 +14,18 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && CONFIG="\
         --prefix=$PREFIX \
         --sbin-path=$NGINX_SBIN \
+        --http-client-body-temp-path=/var/cache/nginx/client_temp \
+        --http-proxy-temp-path=/var/cache/nginx/proxy_temp \
+        --http-fastcgi-temp-path=/var/cache/nginx/fastcgi_temp \
+        --http-uwsgi-temp-path=/var/cache/nginx/uwsgi_temp \
+        --http-scgi-temp-path=/var/cache/nginx/scgi_temp \
         --user=nginx \
         --group=nginx \
         --with-http_ssl_module \
         --with-http_v2_module \
     " \
     && addgroup -S nginx \
-    && adduser -D -s /sbin/nologin -G nginx nginx \
+    && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libc-dev \
@@ -32,6 +37,7 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
         curl \
         grep \
         sed \
+        tzdata \
     && curl -fSL https://nginx.org/download/nginx-$VERSION.tar.gz -o nginx.tar.gz \
     && mkdir -p /usr/src \
     && tar -zxC /usr/src -f nginx.tar.gz \
@@ -48,6 +54,11 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && make install \
     && strip $NGINX_SBIN* \
     && rm -rf /usr/src/nginx-$VERSION \
+    && mkdir -p $PREFIX/conf.d \
+    \
+    # Bring in tzdata, e.g. Asia/Shanghai
+    && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
+    && date "+%n%Y-%m-%d %H:%M:%S %Z%n" \
     \
     # Bring in gettext so we can get `envsubst`, then throw the rest away.
     # To do this, we need to install `gettext` then move `envsubst` out of the way so `gettext` can be deleted completely, then move `envsubst` back.
@@ -63,13 +74,7 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && apk del .build-deps \
     && apk del .gettext \
     && mv /tmp/envsubst /usr/local/bin/ \
-    \
-    # Bring in tzdata, e.g. Asia/Shanghai
-    && apk add --no-cache tzdata \
-    && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
-    && apk del tzdata \
     && nginx -V \
-    && date "+%n%Y-%m-%d %H:%M:%S %Z%n" \
     \
     # Nginx Crontab
     && echo "# Cut Nginx Logs" >> /etc/crontabs/root \
@@ -78,10 +83,12 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && crontab -l
 
 
+COPY nginx.conf $PREFIX/conf/nginx.conf
+COPY default.conf $PREFIX/conf.d/default.conf
+
 COPY cut-nginx-logs.sh $PREFIX/cut-nginx-logs.sh
 
 EXPOSE 80 443
-
 STOPSIGNAL SIGTERM
 
 CMD ["/bin/sh", "-c", "nginx && crond -f"]
