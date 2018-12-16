@@ -22,7 +22,14 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
         --user=nginx \
         --group=nginx \
         --with-http_ssl_module \
+        --with-http_realip_module \
+        --with-http_addition_module \
         --with-http_v2_module \
+        --with-stream \
+        --with-stream_ssl_module \
+        --with-stream_ssl_preread_module \
+        --with-mail \
+        --with-mail_ssl_module \
     " \
     && addgroup -S nginx \
     && adduser -D -S -h /var/cache/nginx -s /sbin/nologin -G nginx nginx \
