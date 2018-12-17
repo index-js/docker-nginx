@@ -1,4 +1,4 @@
-#bin/sh
+#!/bin/sh
 
 # 定时切割Nginx的日志脚本
 # 例: /etc/nginx/logs/{ Y }/{ m }/{ Ymd }_access.log

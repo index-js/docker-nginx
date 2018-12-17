@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM dotcloudid/alpine:latest-stable
 
 LABEL maintainer="Yanglin <i@yangl.in>"
 LABEL from="https://github.com/nginxinc/docker-nginx/tree/master/mainline/alpine"
@@ -44,7 +44,6 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
         curl \
         grep \
         sed \
-        tzdata \
     && curl -fSL https://nginx.org/download/nginx-$VERSION.tar.gz -o nginx.tar.gz \
     && mkdir -p /usr/src \
     && tar -zxC /usr/src -f nginx.tar.gz \
@@ -63,10 +62,6 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && rm -rf /usr/src/nginx-$VERSION \
     && mkdir -p $PREFIX/conf.d \
     \
-    # Bring in tzdata, e.g. Asia/Shanghai
-    && cp /usr/share/zoneinfo/$TIMEZONE /etc/localtime \
-    && date "+%n%Y-%m-%d %H:%M:%S %Z%n" \
-    \
     # Bring in gettext so we can get `envsubst`, then throw the rest away.
     # To do this, we need to install `gettext` then move `envsubst` out of the way so `gettext` can be deleted completely, then move `envsubst` back.
     && apk add --no-cache --virtual .gettext gettext \
@@ -80,6 +75,7 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && apk add --no-cache --virtual .nginx-rundeps $runDeps \
     && apk del .build-deps \
     && apk del .gettext \
+    && rm -rf /var/cache/apk/* \
     && mv /tmp/envsubst /usr/local/bin/ \
     && nginx -V \
     \
