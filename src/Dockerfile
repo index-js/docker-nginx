@@ -26,11 +26,11 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     && apk add --no-cache --virtual .build-deps \
         gcc \
         libc-dev \
-        make \
         openssl-dev \
         pcre-dev \
         zlib-dev \
         linux-headers \
+        make \
         curl \
         grep \
         sed \
@@ -41,7 +41,7 @@ RUN NGINX_SBIN="/usr/sbin/nginx" \
     \
     # Remove "Server: nginx"
     && grep -rl ".server == NULL" ./src/http | xargs sed -i "s/r->headers_out\.server == NULL/0/g" \
-    && grep -rl "<hr><center>" ./src/http | xargs sed -i "s/<hr><center>.*$/<hr><center>Server Error Page<\/center>\" CRLF/g" \
+    && grep -rl "<hr><center>" ./src/http | xargs sed -i "s/\(<hr><center>\).*\(<\/center>\)/\1 Server Error Page \2/g" \
     \
     # Compile
     && ./configure $CONFIG \
